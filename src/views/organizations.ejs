@@ -5,21 +5,14 @@
     <p>We partner with outstanding organizations dedicated to making a difference in communities around the world.</p>
 
     <div class="cards-grid">
-        <div class="card">
-            <img src="/img/brightfuture-logo.png" alt="BrightFuture Logo">
-            <h3>BrightFuture</h3>
-            <p>Empowering youth through education and mentorship programs in underserved communities.</p>
-        </div>
-        <div class="card">
-            <img src="/img/greenharvest-logo.png" alt="GreenHarvest Logo">
-            <h3>GreenHarvest</h3>
-            <p>Promoting sustainable agriculture and environmental stewardship across rural regions.</p>
-        </div>
-        <div class="card">
-            <img src="/img/unityserve-logo.png" alt="UnityServe Logo">
-            <h3>UnityServe</h3>
-            <p>Building stronger communities by coordinating volunteer efforts and local outreach events.</p>
-        </div>
+        <% organizations.forEach(organization => { %>
+            <div class="card">
+                <img src="/img/<%= organization.logo_filename %>" alt="<%= organization.name %> Logo">
+                <h3><%= organization.name %></h3>
+                <p><%= organization.description %></p>
+                <p class="contact-email"><strong>Contact:</strong> <%= organization.contact_email %></p>
+            </div>
+        <% }); %>
     </div>
 </main>
 
