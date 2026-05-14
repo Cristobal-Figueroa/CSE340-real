@@ -5,10 +5,9 @@
     <p>Browse service opportunities by category to find the cause that matters most to you.</p>
 
     <ul class="category-list">
-        <li>Environmental</li>
-        <li>Educational</li>
-        <li>Community Service</li>
-        <li>Health and Wellness</li>
+        <% categories.forEach(category => { %>
+            <li><%= category.name %></li>
+        <% }); %>
     </ul>
 </main>
 
