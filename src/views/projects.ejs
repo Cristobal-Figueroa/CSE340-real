@@ -2,25 +2,18 @@
 
 <main>
     <h1><%= title %></h1>
-    <p>Discover ongoing service projects and find opportunities to make a meaningful impact in your community.</p>
+    <p>Discover the next upcoming service projects and find opportunities to make a meaningful impact in your community.</p>
 
     <ul class="projects-list">
-        <li>
-            <h3>Community Garden Restoration</h3>
-            <p>Help restore and maintain local community gardens to provide fresh produce to families in need.</p>
-        </li>
-        <li>
-            <h3>Youth Literacy Program</h3>
-            <p>Volunteer as a reading mentor for children in elementary schools across the district.</p>
-        </li>
-        <li>
-            <h3>Park Cleanup Initiative</h3>
-            <p>Join monthly cleanup events to keep public parks safe, clean, and beautiful for everyone.</p>
-        </li>
-        <li>
-            <h3>Food Bank Volunteer Drive</h3>
-            <p>Assist in sorting, packing, and distributing food donations at local food banks.</p>
-        </li>
+        <% projects.forEach(project => { %>
+            <li>
+                <h3><a href="/project/<%= project.project_id %>"><%= project.title %></a></h3>
+                <p><strong>Organization:</strong> 
+                    <a href="/organization/<%= project.organization_id %>"><%= project.organization_name %></a>
+                </p>
+                <p><strong>Date:</strong> <%= new Date(project.date).toLocaleDateString() %></p>
+            </li>
+        <% }); %>
     </ul>
 </main>
 
