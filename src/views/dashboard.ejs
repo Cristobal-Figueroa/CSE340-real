@@ -1,0 +1,27 @@
+<%- include('partials/header') %>
+
+<main>
+    <h1><%= title %></h1>
+
+    <div class="dashboard-content">
+        <h2>Welcome, <%= name %>!</h2>
+        
+        <div class="user-info">
+            <h3>Your Account Information</h3>
+            <p><strong>Name:</strong> <%= name %></p>
+            <p><strong>Username:</strong> <%= email %></p>
+        </div>
+
+        <div class="dashboard-actions">
+            <h3>Quick Actions</h3>
+            <ul>
+                <li><a href="/organizations">View Organizations</a></li>
+                <li><a href="/projects">View Projects</a></li>
+                <li><a href="/categories">View Categories</a></li>
+            </ul>
+        </div>
+    </div>
+
+</main>
+
+<%- include('partials/footer') %>
