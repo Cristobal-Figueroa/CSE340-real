@@ -30,26 +30,44 @@ const projectValidation = [
 
 // Define any controller functions
 const showProjectsPage = async (req, res) => {
-    const projects = await getUpcomingProjects(NUMBER_OF_UPCOMING_PROJECTS);
-    const title = 'Upcoming Service Projects';
+    try {
+        const projects = await getUpcomingProjects(NUMBER_OF_UPCOMING_PROJECTS);
+        const title = 'Upcoming Service Projects';
 
-    res.render('projects', { title, projects });
+        res.render('projects', { title, projects });
+    } catch (error) {
+        console.error('Error loading projects:', error);
+        req.flash('error', 'Error loading projects.');
+        res.redirect('/');
+    }
 };
 
 const showProjectDetailsPage = async (req, res) => {
-    const projectId = req.params.id;
-    const project = await getProjectDetails(projectId);
-    const categories = await getCategoriesByProject(projectId);
-    const title = 'Project Details';
+    try {
+        const projectId = req.params.id;
+        const project = await getProjectDetails(projectId);
+        const categories = await getCategoriesByProject(projectId);
+        const title = 'Project Details';
 
-    res.render('project', { title, project, categories });
+        res.render('project', { title, project, categories });
+    } catch (error) {
+        console.error('Error loading project details:', error);
+        req.flash('error', 'Project not found.');
+        res.redirect('/projects');
+    }
 };
 
 const showNewProjectForm = async (req, res) => {
-    const organizations = await getAllOrganizations();
-    const title = 'Add New Service Project';
+    try {
+        const organizations = await getAllOrganizations();
+        const title = 'Add New Service Project';
 
-    res.render('new-project', { title, organizations });
+        res.render('new-project', { title, organizations });
+    } catch (error) {
+        console.error('Error loading new project form:', error);
+        req.flash('error', 'Error loading form.');
+        res.redirect('/projects');
+    }
 }
 
 const processNewProjectForm = async (req, res) => {
@@ -82,12 +100,18 @@ const processNewProjectForm = async (req, res) => {
 }
 
 const showEditProjectForm = async (req, res) => {
-    const projectId = req.params.id;
-    const projectDetails = await getProjectDetails(projectId);
-    const organizations = await getAllOrganizations();
+    try {
+        const projectId = req.params.id;
+        const projectDetails = await getProjectDetails(projectId);
+        const organizations = await getAllOrganizations();
 
-    const title = 'Edit Service Project';
-    res.render('edit-project', { title, projectDetails, organizations });
+        const title = 'Edit Service Project';
+        res.render('edit-project', { title, projectDetails, organizations });
+    } catch (error) {
+        console.error('Error loading edit form:', error);
+        req.flash('error', 'Project not found.');
+        res.redirect('/projects');
+    }
 };
 
 const processEditProjectForm = async (req, res) => {
@@ -105,14 +129,20 @@ const processEditProjectForm = async (req, res) => {
         return res.redirect('/edit-project/' + req.params.id);
     }
     
-    const { title, description, location, date, organizationId } = req.body;
+    try {
+        const { title, description, location, date, organizationId } = req.body;
 
-    await updateProject(projectId, title, description, location, date, organizationId);
-    
-    // Set a success flash message
-    req.flash('success', 'Service project updated successfully!');
+        await updateProject(projectId, title, description, location, date, organizationId);
+        
+        // Set a success flash message
+        req.flash('success', 'Service project updated successfully!');
 
-    res.redirect(`/project/${projectId}`);
+        res.redirect(`/project/${projectId}`);
+    } catch (error) {
+        console.error('Error updating project:', error);
+        req.flash('error', 'Error updating project.');
+        res.redirect('/edit-project/' + projectId);
+    }
 };
 
 // Export any controller functions
