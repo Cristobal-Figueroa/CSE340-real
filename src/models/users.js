@@ -1,4 +1,5 @@
 import db from './db.js';
+import bcrypt from 'bcrypt';
 
 /**
  * Creates a new user in the database with the "user" role
@@ -28,4 +29,63 @@ const createUser = async (name, email, passwordHash) => {
     return result.rows[0].user_id;
 };
 
-export { createUser };
+/**
+ * Finds a user by their email address
+ * @param {string} email - The user's email
+ * @returns {object|null} The user object or null if not found
+ */
+const findUserByEmail = async (email) => {
+    const query = `
+        SELECT user_id, name, email, password_hash, role_id 
+        FROM users 
+        WHERE email = $1
+    `;
+    const queryParams = [email];
+    
+    const result = await db.query(query, queryParams);
+
+    if (result.rows.length === 0) {
+        return null; // User not found
+    }
+    
+    return result.rows[0];
+};
+
+/**
+ * Verifies a password against a hash
+ * @param {string} password - Plain text password
+ * @param {string} passwordHash - Hashed password from database
+ * @returns {boolean} True if password matches, false otherwise
+ */
+const verifyPassword = async (password, passwordHash) => {
+    return bcrypt.compare(password, passwordHash);
+};
+
+/**
+ * Authenticates a user by email and password
+ * @param {string} email - The user's email
+ * @param {string} password - The user's password
+ * @returns {object|null} User object without password_hash if authenticated, null otherwise
+ */
+const authenticateUser = async (email, password) => {
+    // Find user by email
+    const user = await findUserByEmail(email);
+    
+    if (!user) {
+        return null; // User not found
+    }
+    
+    // Verify password
+    const isPasswordValid = await verifyPassword(password, user.password_hash);
+    
+    if (!isPasswordValid) {
+        return null; // Invalid password
+    }
+    
+    // Remove password_hash before returning user
+    const { password_hash, ...userWithoutPassword } = user;
+    
+    return userWithoutPassword;
+};
+
+export { createUser, authenticateUser };
