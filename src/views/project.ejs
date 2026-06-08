@@ -13,7 +13,9 @@
         <a href="/organization/<%= project.organization_id %>"><%= project.organization_name %></a>
     </p>
     
-    <p><a href="/edit-project/<%= project.project_id %>">Edit Project</a></p>
+    <% if (isAdmin) { %>
+        <p><a href="/edit-project/<%= project.project_id %>">Edit Project</a></p>
+    <% } %>
     
     <% if (categories.length > 0) { %>
         <p><strong>Categories:</strong></p>
@@ -24,7 +26,9 @@
         </ul>
     <% } %>
     
-    <p><a href="/assign-categories/<%= project.project_id %>">Edit Categories</a></p>
+    <% if (isAdmin) { %>
+        <p><a href="/assign-categories/<%= project.project_id %>">Edit Categories</a></p>
+    <% } %>
 </main>
 
 <%- include('partials/footer') %>

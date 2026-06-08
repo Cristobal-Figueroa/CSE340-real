@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
-import { createUser, authenticateUser } from '../models/users.js';
+import db from '../models/db.js';
+import { createUser, authenticateUser, getAllUsersWithRoles } from '../models/users.js';
 
 const showUserRegistrationForm = (req, res) => {
     const title = 'Register';
@@ -83,6 +84,39 @@ const requireLogin = (req, res, next) => {
     next();
 };
 
+const requireRole = (roleName) => {
+    return async (req, res, next) => {
+        if (!req.session.user) {
+            req.flash('error', 'You must be logged in to access this page.');
+            return res.redirect('/login');
+        }
+
+        try {
+            // Get role_id for the required role
+            const roleQuery = 'SELECT role_id FROM roles WHERE role_name = $1';
+            const roleResult = await db.query(roleQuery, [roleName]);
+            
+            if (roleResult.rows.length === 0) {
+                throw new Error(`Role ${roleName} not found`);
+            }
+            
+            const requiredRoleId = roleResult.rows[0].role_id;
+            
+            // Check if user has the required role
+            if (req.session.user.role_id !== requiredRoleId) {
+                req.flash('error', 'You do not have permission to access this page.');
+                return res.redirect('/dashboard');
+            }
+            
+            next();
+        } catch (error) {
+            console.error('Error checking role:', error);
+            req.flash('error', 'An error occurred. Please try again.');
+            res.redirect('/dashboard');
+        }
+    };
+};
+
 const showDashboard = (req, res) => {
     const user = req.session.user;
     res.render('dashboard', { 
@@ -92,4 +126,17 @@ const showDashboard = (req, res) => {
     });
 };
 
-export { showUserRegistrationForm, processUserRegistrationForm, showLoginForm, processLoginForm, processLogout, requireLogin, showDashboard };
+const showUsersPage = async (req, res) => {
+    try {
+        const users = await getAllUsersWithRoles();
+        const title = 'Registered Users';
+        
+        res.render('users', { title, users });
+    } catch (error) {
+        console.error('Error loading users:', error);
+        req.flash('error', 'Error loading users.');
+        res.redirect('/dashboard');
+    }
+};
+
+export { showUserRegistrationForm, processUserRegistrationForm, showLoginForm, processLoginForm, processLogout, requireLogin, requireRole, showDashboard, showUsersPage };

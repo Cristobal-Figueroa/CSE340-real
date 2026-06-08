@@ -20,6 +20,15 @@
                 <li><a href="/categories">View Categories</a></li>
             </ul>
         </div>
+
+        <% if (isAdmin) { %>
+            <div class="admin-section">
+                <h3>Admin Tools</h3>
+                <ul>
+                    <li><a href="/users">View All Users</a></li>
+                </ul>
+            </div>
+        <% } %>
     </div>
 
 </main>

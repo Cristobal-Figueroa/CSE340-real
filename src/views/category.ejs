@@ -3,7 +3,9 @@
 <main>
     <h2><%= categoryDetails.name %></h2>
     
-    <p><a href="/edit-category/<%= categoryDetails.category_id %>">Edit Category</a></p>
+    <% if (isAdmin) { %>
+        <p><a href="/edit-category/<%= categoryDetails.category_id %>">Edit Category</a></p>
+    <% } %>
     
     <p>Service projects in this category:</p>
     
