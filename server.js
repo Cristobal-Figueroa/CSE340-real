@@ -48,7 +48,15 @@ app.use(flash);
 // Middleware to log all incoming requests
 app.use((req, res, next) => {
     if (NODE_ENV === 'development') {
-        console.log(`${req.method} ${req.url}`);
+        // Filter out browser automatic requests
+        const ignoredPaths = [
+            '/.well-known/appspecific/com.chrome.devtools.json',
+            '/favicon.ico'
+        ];
+        
+        if (!ignoredPaths.includes(req.url)) {
+            console.log(`${req.method} ${req.url}`);
+        }
     }
     next(); // Pass control to the next middleware or route
 });
@@ -79,9 +87,17 @@ app.use((req, res, next) => {
 
 // Global error handler
 app.use((err, req, res, next) => {
-    // Log error details for debugging
-    console.error('Error occurred:', err.message);
-    console.error('Stack trace:', err.stack);
+    // Filter out browser automatic requests from error logs
+    const ignoredPaths = [
+        '/.well-known/appspecific/com.chrome.devtools.json',
+        '/favicon.ico'
+    ];
+    
+    // Log error details for debugging (skip browser automatic requests)
+    if (!ignoredPaths.includes(req.url)) {
+        console.error('Error occurred:', err.message);
+        console.error('Stack trace:', err.stack);
+    }
     
     // Ensure isLoggedIn is set (in case error occurred before middleware)
     if (res.locals.isLoggedIn === undefined) {
