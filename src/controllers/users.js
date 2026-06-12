@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import db from '../models/db.js';
 import { createUser, authenticateUser, getAllUsersWithRoles } from '../models/users.js';
+import { addVolunteer, removeVolunteer, getUserVolunteeredProjects, isUserVolunteering } from '../models/volunteers.js';
 
 const showUserRegistrationForm = (req, res) => {
     const title = 'Register';
@@ -117,13 +118,27 @@ const requireRole = (roleName) => {
     };
 };
 
-const showDashboard = (req, res) => {
+const showDashboard = async (req, res) => {
     const user = req.session.user;
-    res.render('dashboard', { 
-        title: 'Dashboard',
-        name: user.name,
-        email: user.email
-    });
+    
+    try {
+        const volunteeredProjects = await getUserVolunteeredProjects(user.user_id);
+        
+        res.render('dashboard', { 
+            title: 'Dashboard',
+            name: user.name,
+            email: user.email,
+            volunteeredProjects
+        });
+    } catch (error) {
+        console.error('Error loading volunteered projects:', error);
+        res.render('dashboard', { 
+            title: 'Dashboard',
+            name: user.name,
+            email: user.email,
+            volunteeredProjects: []
+        });
+    }
 };
 
 const showUsersPage = async (req, res) => {
@@ -139,4 +154,34 @@ const showUsersPage = async (req, res) => {
     }
 };
 
-export { showUserRegistrationForm, processUserRegistrationForm, showLoginForm, processLoginForm, processLogout, requireLogin, requireRole, showDashboard, showUsersPage };
+const addVolunteerController = async (req, res) => {
+    const { projectId } = req.params;
+    const userId = req.session.user.user_id;
+
+    try {
+        await addVolunteer(userId, projectId);
+        req.flash('success', 'You have successfully volunteered for this project!');
+        res.redirect(`/project/${projectId}`);
+    } catch (error) {
+        console.error('Error adding volunteer:', error);
+        req.flash('error', 'An error occurred. Please try again.');
+        res.redirect(`/project/${projectId}`);
+    }
+};
+
+const removeVolunteerController = async (req, res) => {
+    const { projectId } = req.params;
+    const userId = req.session.user.user_id;
+
+    try {
+        await removeVolunteer(userId, projectId);
+        req.flash('success', 'You have been removed from this project.');
+        res.redirect(`/project/${projectId}`);
+    } catch (error) {
+        console.error('Error removing volunteer:', error);
+        req.flash('error', 'An error occurred. Please try again.');
+        res.redirect(`/project/${projectId}`);
+    }
+};
+
+export { showUserRegistrationForm, processUserRegistrationForm, showLoginForm, processLoginForm, processLogout, requireLogin, requireRole, showDashboard, showUsersPage, addVolunteerController, removeVolunteerController };

@@ -1,6 +1,7 @@
 // Import any needed model functions
 import { getAllProjects, getUpcomingProjects, getProjectDetails, getCategoriesByProject, createProject, updateProject } from '../models/projects.js';
 import { getAllOrganizations } from '../models/organizations.js';
+import { isUserVolunteering } from '../models/volunteers.js';
 import { body, validationResult } from 'express-validator';
 
 // Define constants
@@ -48,8 +49,14 @@ const showProjectDetailsPage = async (req, res) => {
         const project = await getProjectDetails(projectId);
         const categories = await getCategoriesByProject(projectId);
         const title = 'Project Details';
+        
+        // Check if user is volunteering for this project
+        let isVolunteering = false;
+        if (req.session && req.session.user) {
+            isVolunteering = await isUserVolunteering(req.session.user.user_id, projectId);
+        }
 
-        res.render('project', { title, project, categories });
+        res.render('project', { title, project, categories, isVolunteering });
     } catch (error) {
         console.error('Error loading project details:', error);
         req.flash('error', 'Project not found.');

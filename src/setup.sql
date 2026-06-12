@@ -106,3 +106,11 @@ CREATE TABLE users (
 -- Insert admin test account (username: admin@example.com, password: cse340!)
 INSERT INTO users (name, email, password_hash, role_id) VALUES 
     ('Admin User', 'admin@example.com', '$2b$10$Bc1AkXNW7EmD0H1NI78Pbu/6bGpAZ8CR71G2ogEZ1T6ET2dqJ32Ay', (SELECT role_id FROM roles WHERE role_name = 'admin'));
+
+-- Create volunteers table for many-to-many relationship between users and service_project
+CREATE TABLE volunteers (
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    project_id INTEGER REFERENCES service_project(project_id) ON DELETE CASCADE,
+    signed_up_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, project_id)
+);

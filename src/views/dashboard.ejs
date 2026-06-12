@@ -29,6 +29,25 @@
                 </ul>
             </div>
         <% } %>
+
+        <div class="volunteered-projects">
+            <h3>My Volunteered Projects</h3>
+            <% if (volunteeredProjects && volunteeredProjects.length > 0) { %>
+                <ul>
+                    <% volunteeredProjects.forEach(project => { %>
+                        <li>
+                            <a href="/project/<%= project.project_id %>"><%= project.title %></a>
+                            - <%= new Date(project.date).toLocaleDateString() %>
+                            <form action="/remove-volunteer/<%= project.project_id %>" method="POST" style="display: inline;">
+                                <button type="submit" style="padding: 2px 8px; font-size: 12px;">Remove</button>
+                            </form>
+                        </li>
+                    <% }); %>
+                </ul>
+            <% } else { %>
+                <p>You haven't volunteered for any projects yet.</p>
+            <% } %>
+        </div>
     </div>
 
 </main>
