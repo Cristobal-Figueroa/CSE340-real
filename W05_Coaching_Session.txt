@@ -1,0 +1,299 @@
+W05 Coaching Session Transcript
+Course: CSE 340 — Web Backend Development  
+Date: June 8, 2026  
+Student: Cristobal Figueroa
+
+---
+
+Session Transcript
+
+---
+
+AI Coach: Welcome! Just to be clear from the start, this is a coaching session, not a test. It is perfectly okay—and even encouraged—to say "I don't know" or "I made a mistake." That's the fastest way we'll learn today.
+
+I'm here as your Learning Coach and Software Mentor. My goal is to help you reflect on the work you've done this week, close any knowledge gaps, and make sure you feel confident talking about what you built.
+
+To start — could you tell me your name?
+
+---
+
+Cristobal: my name is Cristobal Figueroa
+
+---
+
+AI Coach: Great to have you here, Cristobal! Remember, this is a completely safe space — no grades, no judgment. If something doesn't click or you're unsure, just say so and we'll work through it together.
+
+This week you worked on authentication and authorization — implementing user registration, login, password hashing, sessions, and role-based access control. Can you give me a quick overview of what you built?
+
+---
+
+Cristobal: this week I added a complete authentication system. I created user registration with password hashing using bcrypt implemented login and logout functionality with session management created middleware to protect routes based on whether users are logged in and their roles and updated the UI to show or hide links based on authentication status. I also created a users page that only admins can access to see all registered users
+
+---
+
+AI Coach: Excellent overview. Let's dive into the details.
+
+We'll start with Topic 1: Registration and Password Hashing. Can you share a code snippet showing how you handle user registration and password hashing?
+
+---
+
+Cristobal: sure here's my processUserRegistrationForm controller:
+
+const processUserRegistrationForm = async (req, res) => {
+    const { name, email, password } = req.body;
+
+    try {
+        // Hash the password before storing it
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(password, saltRounds);
+
+        // Create the user in the database
+        const userId = await createUser(name, email, passwordHash);
+
+        req.flash('success', 'Registration successful! Please log in.');
+        res.redirect('/login');
+    } catch (error) {
+        console.error('Error registering user:', error);
+        
+        if (error.code === '23505') {
+            req.flash('error', 'An account with this email already exists.');
+        } else {
+            req.flash('error', 'An error occurred during registration. Please try again.');
+        }
+        
+        res.redirect('/register');
+    }
+};
+
+---
+
+AI Coach: Good example. I see you're using bcrypt to hash the password. Can you explain why we hash passwords instead of storing them as plain text?
+
+---
+
+Cristobal: if we store passwords as plain text and someone gets access to the database they can see everyone's passwords. that's a huge security risk because people often reuse passwords across different sites. hashing converts the password into a scrambled string that can't be reversed. even if someone steals the database they can't get the original passwords back. bcrypt is specifically designed for passwords because it's slow to compute which makes brute force attacks much harder
+
+---
+
+AI Coach: Perfect explanation. I notice you're using saltRounds set to 10. What does the salt do and why is the number 10 important?
+
+---
+
+Cristobal: the salt is random data that gets added to the password before hashing. this means even if two users have the same password their hashes will be different because each one gets a different salt. this prevents rainbow table attacks where attackers use pre-computed hash tables. the number 10 is the cost factor or work factor. it determines how many times bcrypt runs the hashing algorithm. higher numbers are more secure but slower. 10 is a good balance between security and performance for most applications
+
+---
+
+AI Coach: Exactly right. Now let's move to Topic 2: Login and Sessions. Can you show me your login controller and explain how sessions work in your application?
+
+---
+
+Cristobal: here's my processLoginForm:
+
+const processLoginForm = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await authenticateUser(email, password);
+        
+        if (user) {
+            // Store user info in session
+            req.session.user = user;
+            req.flash('success', 'Login successful!');
+
+            if (process.env.NODE_ENV === 'development') {
+                console.log('User logged in:', user);
+            }
+
+            res.redirect('/dashboard');
+        } else {
+            req.flash('error', 'Invalid email or password.');
+            res.redirect('/login');
+        }
+    } catch (error) {
+        console.error('Error during login:', error);
+        req.flash('error', 'An error occurred during login. Please try again.');
+        res.redirect('/login');
+    }
+};
+
+---
+
+AI Coach: Good. Walk me through what happens when someone logs in. How does the session get created and how does the server remember them on subsequent requests?
+
+---
+
+Cristobal: when the user submits the login form I first authenticate them by checking their email and password against the database. if the credentials are correct I store the user object in req.session.user. express-session middleware automatically handles creating a session ID and storing it in a cookie on the user's browser. the actual session data is stored on the server and linked to that session ID. on future requests the browser sends the cookie back the server looks up the session data and makes it available in req.session. this is how the server remembers the user across multiple requests
+
+---
+
+AI Coach: Perfect understanding. I notice you're storing the user object in the session but not the password. Why is that important?
+
+---
+
+Cristobal: I remove the password hash before storing the user in the session. this is a security best practice. even though the password is hashed it's still sensitive data that shouldn't be stored in the session unnecessarily. the session data is stored on the server but minimizing what we store reduces risk. also the session data gets serialized and deserialized so keeping it smaller is more efficient. the user only needs their user ID name email and role_id for the application to work
+
+---
+
+AI Coach: Excellent security awareness. Now let's move to Topic 3: Protected Access Middleware. Can you show me your middleware functions and explain how they protect routes?
+
+---
+
+Cristobal: here are my middleware functions:
+
+const requireLogin = (req, res, next) => {
+    if (!req.session.user) {
+        req.flash('error', 'You must be logged in to access this page.');
+        return res.redirect('/login');
+    }
+    next();
+};
+
+const requireRole = (roleName) => {
+    return async (req, res, next) => {
+        if (!req.session.user) {
+            req.flash('error', 'You must be logged in to access this page.');
+            return res.redirect('/login');
+        }
+
+        try {
+            // Get role_id for the required role
+            const roleQuery = 'SELECT role_id FROM roles WHERE role_name = $1';
+            const roleResult = await db.query(roleQuery, [roleName]);
+            
+            if (roleResult.rows.length === 0) {
+                throw new Error(`Role ${roleName} not found`);
+            }
+            
+            const requiredRoleId = roleResult.rows[0].role_id;
+            
+            // Check if user has the required role
+            if (req.session.user.role_id !== requiredRoleId) {
+                req.flash('error', 'You do not have permission to access this page.');
+                return res.redirect('/dashboard');
+            }
+            
+            next();
+        } catch (error) {
+            console.error('Error checking role:', error);
+            req.flash('error', 'An error occurred. Please try again.');
+            res.redirect('/dashboard');
+        }
+    };
+};
+
+---
+
+AI Coach: Good examples. Explain the difference between requireLogin and requireRole. When would you use each one?
+
+---
+
+Cristobal: requireLogin is simpler it just checks if the user is logged in at all. I use this for pages that any logged-in user should access like the dashboard. requireRole is more specific it checks not just if they're logged in but if they have a particular role like admin. I use this for admin-only pages like creating organizations projects categories or viewing the users list. requireRole is actually a function that returns another function which is why I can pass the role name as an argument when using it in routes
+
+---
+
+AI Coach: Perfect explanation of the middleware factory pattern. I notice requireRole makes a database query to get the role_id. Why not just hardcode the admin role_id as 2?
+
+---
+
+Cristobal: hardcoding would work but it's less flexible. if the role IDs change in the database or if I add more roles later the code would break. by querying the database I make the code more maintainable. it also makes the code more readable because I can use meaningful role names like 'admin' instead of magic numbers. the performance impact is minimal since role lookups are fast and could even be cached if needed
+
+---
+
+AI Coach: Excellent architectural thinking. Now let's discuss Topic 4: Protected Access Links and Navigation. Can you show me how you hide or show links in the UI based on user roles?
+
+---
+
+Cristobal: I set up middleware in server.js to make authentication status available to all templates:
+
+app.use((req, res, next) => {
+    res.locals.isLoggedIn = false;
+    res.locals.isAdmin = false;
+    
+    if (req.session && req.session.user) {
+        res.locals.isLoggedIn = true;
+        res.locals.roleId = req.session.user.role_id;
+        // role_id 2 is admin (based on setup.sql)
+        res.locals.isAdmin = req.session.user.role_id === 2;
+    }
+
+    res.locals.NODE_ENV = NODE_ENV;
+    next();
+});
+
+then in my EJS templates I use conditional rendering like this in the header:
+
+<% if (!isLoggedIn) { %>
+    <li><a href="/register">Register</a></li>
+    <li><a href="/login">Login</a></li>
+<% } else { %>
+    <li><a href="/dashboard">Dashboard</a></li>
+    <li><a href="/logout">Logout</a></li>
+<% } %>
+
+and for admin-only links:
+
+<% if (isAdmin) { %>
+    <p><a href="/new-organization">Add a new organization</a></p>
+<% } %>
+
+---
+
+AI Coach: Good examples. Explain why you use res.locals instead of passing these variables to each render call individually.
+
+---
+
+Cristobal: res.locals makes variables available to all templates automatically. this is much cleaner than passing isLoggedIn isAdmin and roleId to every single res.render call throughout the application. it follows the DRY principle. I set them once in the middleware and they're available everywhere. it also makes the code more maintainable because if I need to add another global variable I just add it in one place
+
+---
+
+AI Coach: Exactly right. And I notice you're checking isAdmin in the views but also protecting the routes with middleware. Why do you need both?
+
+---
+
+Cristobal: hiding links in the UI is for user experience it makes the interface cleaner by not showing things users can't access. but it's not security because users can still type URLs directly into the browser or use tools like curl to make requests. the middleware provides the actual security layer on the server side. even if someone tries to access a protected URL directly the middleware will block them. this is called defense in depth using multiple layers of protection
+
+---
+
+AI Coach: Perfect security mindset. One more question about your role checking. You're comparing role_id === 2 for admin. What if you wanted to add a moderator role that could also access some admin features?
+
+---
+
+Cristobal: right now my implementation is binary either admin or not admin. if I wanted to add more roles I'd need to change the approach. I could either check for multiple role IDs or I could create a permissions system where roles have specific permissions instead of hardcoding role checks. for example I could have a table that maps roles to permissions and check if a user has a specific permission rather than checking their role directly. this would be more flexible and scalable for complex applications
+
+---
+
+AI Coach: Excellent forward-thinking about scalability.
+
+Let's do a quick recap of what we covered:
+
+- Registration and Password Hashing — You explained why we hash passwords instead of storing plain text, described how bcrypt and salt work, and showed your registration controller with password hashing
+- Login and Sessions — You explained how sessions solve HTTP's stateless nature, demonstrated storing user data in req.session, and discussed why we remove passwords from session data
+- Protected Access Middleware — You showed your requireLogin and requireRole middleware, explained the middleware factory pattern, and discussed why database lookups are better than hardcoded values
+- Protected Access Links and Navigation — You demonstrated using res.locals for global template variables, showed conditional rendering in EJS, and explained the difference between UI hiding and server-side security
+
+Is there anything from this week's work that still feels unclear or that you'd like to discuss further?
+
+---
+
+Cristobal: actually yeah one thing. I'm using role_id === 2 to check for admin but this feels fragile. what if the database gets reset and the role IDs change?
+
+---
+
+AI Coach: Great observation. You're right that hardcoded role IDs are fragile. A better approach would be to either store the role name in the session instead of the ID or create a helper function that looks up the role name from the ID. Another option is to use the role_id but cache the mapping at application startup so you're not querying the database on every request. The key is to make your code resilient to database changes. In a production app you might also use database migrations to ensure role IDs are consistent across environments.
+
+---
+
+Cristobal: that makes sense so I should probably store the role name in the session instead of the ID
+
+---
+
+AI Coach: That's a good approach for this application. Storing role names in the session would make your code more readable and less dependent on database state. You'd just need to make sure your authenticateUser function includes the role_name when fetching the user data.
+
+Cristobal, you've done excellent work this week. Your authentication system is secure with proper password hashing, your session management follows best practices, your middleware implementation shows understanding of the factory pattern, and your security mindset with defense in depth is exactly right. The fact that you're thinking about the fragility of hardcoded role IDs shows you're considering real-world maintainability.
+
+Great work on this assignment and on this discussion. Good luck with the rest of CSE 340!
+
+---
+
+— End of Session —
+
