@@ -31,21 +31,28 @@
         <% } %>
 
         <div class="volunteered-projects">
-            <h3>My Volunteered Projects</h3>
+            <h3>My Volunteered Projects (<%= volunteeredProjects ? volunteeredProjects.length : 0 %>)</h3>
             <% if (volunteeredProjects && volunteeredProjects.length > 0) { %>
-                <ul>
+                <ul style="list-style: none; padding: 0;">
                     <% volunteeredProjects.forEach(project => { %>
-                        <li>
-                            <a href="/project/<%= project.project_id %>"><%= project.title %></a>
-                            - <%= new Date(project.date).toLocaleDateString() %>
-                            <form action="/remove-volunteer/<%= project.project_id %>" method="POST" style="display: inline;">
-                                <button type="submit" style="padding: 2px 8px; font-size: 12px;">Remove</button>
-                            </form>
+                        <li style="background-color: #f8f9fa; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #28a745;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <a href="/project/<%= project.project_id %>" style="font-size: 18px; font-weight: bold; color: #333; text-decoration: none;"><%= project.title %></a>
+                                    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+                                        <strong>Date:</strong> <%= new Date(project.date).toLocaleDateString() %> | 
+                                        <strong>Organization:</strong> <%= project.organization_name %>
+                                    </p>
+                                </div>
+                                <form action="/remove-volunteer/<%= project.project_id %>" method="POST" style="margin: 0;">
+                                    <button type="submit" style="background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">Remove</button>
+                                </form>
+                            </div>
                         </li>
                     <% }); %>
                 </ul>
             <% } else { %>
-                <p>You haven't volunteered for any projects yet.</p>
+                <p style="color: #666; font-style: italic;">You haven't volunteered for any projects yet.</p>
             <% } %>
         </div>
     </div>
